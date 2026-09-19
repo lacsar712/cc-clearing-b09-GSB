@@ -1,10 +1,13 @@
 package com.clearing.netting.adapter.out.persistence;
 
+import com.clearing.netting.adapter.out.persistence.entity.DuplicateReviewJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.MemberJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.NetPositionJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.NettingRunJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.ObligationJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.UserJpaEntity;
+import com.clearing.netting.domain.model.DuplicateKey;
+import com.clearing.netting.domain.model.DuplicateReview;
 import com.clearing.netting.domain.model.Member;
 import com.clearing.netting.domain.model.NetPosition;
 import com.clearing.netting.domain.model.NettingRun;
@@ -38,7 +41,10 @@ final class PersistenceMapper {
                 e.getTradeDate(),
                 e.getSettleDate(),
                 e.getStatus(),
-                e.getNettingRunId());
+                e.getNettingRunId(),
+                e.getCreatedAt(),
+                e.getCancelReason(),
+                e.getCancelledAt());
     }
 
     static ObligationJpaEntity toEntity(TradeObligation o) {
@@ -52,6 +58,35 @@ final class PersistenceMapper {
         e.setSettleDate(o.getSettleDate());
         e.setStatus(o.getStatus());
         e.setNettingRunId(o.getNettingRunId());
+        e.setCreatedAt(o.getCreatedAt());
+        e.setCancelReason(o.getCancelReason());
+        e.setCancelledAt(o.getCancelledAt());
+        return e;
+    }
+
+    static DuplicateReview toDomain(DuplicateReviewJpaEntity e) {
+        return new DuplicateReview(
+                e.getReviewId(),
+                new DuplicateKey(
+                        e.getSettleDate(),
+                        e.getCurrency(),
+                        e.getPayerMemberId(),
+                        e.getPayeeMemberId(),
+                        e.getAmount()),
+                e.getReviewedAt(),
+                e.getReviewedBy());
+    }
+
+    static DuplicateReviewJpaEntity toEntity(DuplicateReview r) {
+        DuplicateReviewJpaEntity e = new DuplicateReviewJpaEntity();
+        e.setReviewId(r.getReviewId());
+        e.setSettleDate(r.getKey().settleDate());
+        e.setCurrency(r.getKey().currency());
+        e.setPayerMemberId(r.getKey().payerMemberId());
+        e.setPayeeMemberId(r.getKey().payeeMemberId());
+        e.setAmount(r.getKey().amount());
+        e.setReviewedAt(r.getReviewedAt());
+        e.setReviewedBy(r.getReviewedBy());
         return e;
     }
 

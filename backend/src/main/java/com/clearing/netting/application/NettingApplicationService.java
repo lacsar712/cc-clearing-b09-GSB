@@ -30,6 +30,7 @@ public class NettingApplicationService {
     private final MemberRepositoryPort memberRepository;
     private final NetPositionRepositoryPort positionRepository;
     private final NettingRunStatusService statusService;
+    private final DuplicateDetectionApplicationService duplicateDetection;
     private final MultilateralNettingService nettingService;
 
     public NettingApplicationService(
@@ -37,12 +38,14 @@ public class NettingApplicationService {
             ObligationRepositoryPort obligationRepository,
             MemberRepositoryPort memberRepository,
             NetPositionRepositoryPort positionRepository,
-            NettingRunStatusService statusService) {
+            NettingRunStatusService statusService,
+            DuplicateDetectionApplicationService duplicateDetection) {
         this.runRepository = runRepository;
         this.obligationRepository = obligationRepository;
         this.memberRepository = memberRepository;
         this.positionRepository = positionRepository;
         this.statusService = statusService;
+        this.duplicateDetection = duplicateDetection;
         this.nettingService = new MultilateralNettingService();
     }
 
@@ -78,6 +81,13 @@ public class NettingApplicationService {
             throw new DomainException("INVALID_CURRENCY", "currency is required");
         }
         String ccy = currency.trim().toUpperCase();
+
+        if (duplicateDetection.hasPendingGroups(settleDate, ccy)) {
+            throw new DomainException(
+                    "DUPLICATE_SUSPECTS_PENDING",
+                    "unhandled suspected duplicate OPEN obligations exist for settleDate=" + settleDate
+                            + " currency=" + ccy + "; cancel the duplicates or mark the groups reviewed first");
+        }
 
         NettingRun run = NettingRun.create(settleDate, ccy);
         run.markRunning();

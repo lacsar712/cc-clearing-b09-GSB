@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,6 +56,14 @@ public class ObligationController {
                 request.settleDate()));
     }
 
+    @PostMapping("/{id}/cancel")
+    public ObligationResponse cancel(
+            @PathVariable("id") String id,
+            @Valid @RequestBody CancelRequest request) {
+        AuthContext.requireOperator();
+        return ObligationResponse.from(obligationService.cancel(id, request.reason()));
+    }
+
     public record CreateObligationRequest(
             @NotBlank String payerMemberId,
             @NotBlank String payeeMemberId,
@@ -61,6 +71,9 @@ public class ObligationController {
             @NotNull @DecimalMin("0.00000001") BigDecimal amount,
             @NotNull LocalDate tradeDate,
             @NotNull LocalDate settleDate) {
+    }
+
+    public record CancelRequest(@NotBlank String reason) {
     }
 
     public record ObligationResponse(
@@ -72,7 +85,10 @@ public class ObligationController {
             LocalDate tradeDate,
             LocalDate settleDate,
             ObligationStatus status,
-            String nettingRunId) {
+            String nettingRunId,
+            Instant createdAt,
+            String cancelReason,
+            Instant cancelledAt) {
         static ObligationResponse from(TradeObligation o) {
             return new ObligationResponse(
                     o.getObligationId(),
@@ -83,7 +99,10 @@ public class ObligationController {
                     o.getTradeDate(),
                     o.getSettleDate(),
                     o.getStatus(),
-                    o.getNettingRunId());
+                    o.getNettingRunId(),
+                    o.getCreatedAt(),
+                    o.getCancelReason(),
+                    o.getCancelledAt());
         }
     }
 }

@@ -3,6 +3,20 @@
     <h2 class="page-title">轧差执行</h2>
     <p class="page-desc">指定交割日与币种执行单币种多边轧差，校验 Σnet = 0</p>
 
+    <el-alert
+      v-if="pendingDupGroups.length > 0"
+      type="error"
+      show-icon
+      :closable="false"
+      style="margin-bottom:16px"
+    >
+      <template #title>
+        当前交割日 + 币种存在 {{ pendingDupGroups.length }} 组疑似重复 OPEN 义务未处理，轧差已被阻止。
+        <router-link to="/duplicates" style="color:inherit;font-weight:700">前往「重复检测」处理 →</router-link>
+      </template>
+      处理完（取消重复笔或标记已复核）后即可执行轧差。
+    </el-alert>
+
     <div class="card-panel">
       <div class="toolbar">
         <el-date-picker v-model="settleDate" type="date" value-format="YYYY-MM-DD" placeholder="交割日" />
@@ -11,7 +25,12 @@
           <el-option label="CNY" value="CNY" />
           <el-option label="EUR" value="EUR" />
         </el-select>
-        <el-button type="primary" :disabled="!auth.isOperator" :loading="running" @click="execute">执行轧差</el-button>
+        <el-button
+          type="primary"
+          :disabled="!auth.isOperator || pendingDupGroups.length > 0"
+          :loading="running"
+          @click="execute"
+        >执行轧差</el-button>
         <el-button @click="loadRuns">刷新批次</el-button>
       </div>
     </div>
@@ -57,7 +76,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
@@ -70,9 +89,25 @@ const loading = ref(false)
 const result = ref(null)
 const runs = ref([])
 const memberMap = ref({})
+const pendingDupGroups = ref([])
 
 function nameOf(id) {
   return memberMap.value[id] || ''
+}
+
+async function checkDuplicates() {
+  if (!settleDate.value || !currency.value) {
+    pendingDupGroups.value = []
+    return
+  }
+  try {
+    const { data } = await api.get('/duplicate-groups', {
+      params: { settleDate: settleDate.value, currency: currency.value, status: 'PENDING' }
+    })
+    pendingDupGroups.value = data
+  } catch {
+    pendingDupGroups.value = []
+  }
 }
 
 async function loadRuns() {
@@ -84,6 +119,7 @@ async function loadRuns() {
   } finally {
     loading.value = false
   }
+  await checkDuplicates()
 }
 
 async function execute() {
@@ -103,6 +139,8 @@ async function execute() {
     running.value = false
   }
 }
+
+watch([settleDate, currency], checkDuplicates)
 
 onMounted(loadRuns)
 </script>

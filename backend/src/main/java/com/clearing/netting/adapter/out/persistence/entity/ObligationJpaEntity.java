@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -43,6 +44,13 @@ public class ObligationJpaEntity {
 
     @Column(length = 64)
     private String nettingRunId;
+
+    private Instant createdAt;
+
+    @Column(length = 512)
+    private String cancelReason;
+
+    private Instant cancelledAt;
 
     public String getObligationId() {
         return obligationId;
@@ -114,5 +122,29 @@ public class ObligationJpaEntity {
 
     public void setNettingRunId(String nettingRunId) {
         this.nettingRunId = nettingRunId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public Instant getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(Instant cancelledAt) {
+        this.cancelledAt = cancelledAt;
     }
 }

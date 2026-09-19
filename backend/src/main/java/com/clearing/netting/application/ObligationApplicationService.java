@@ -47,6 +47,20 @@ public class ObligationApplicationService {
         return obligationRepository.save(obligation);
     }
 
+    @Transactional
+    public TradeObligation cancel(String obligationId, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new DomainException("CANCEL_REASON_REQUIRED", "cancel reason is required");
+        }
+        TradeObligation obligation = obligationRepository.findById(obligationId)
+                .orElseThrow(() -> new DomainException("OBLIGATION_NOT_FOUND", "obligation not found: " + obligationId));
+        if (obligation.getStatus() != ObligationStatus.OPEN) {
+            throw new DomainException("INVALID_STATE", "only OPEN obligations can be cancelled: " + obligationId);
+        }
+        obligation.cancel(reason);
+        return obligationRepository.save(obligation);
+    }
+
     private void validateMember(String memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new DomainException("MEMBER_NOT_FOUND", "member not found: " + memberId));
