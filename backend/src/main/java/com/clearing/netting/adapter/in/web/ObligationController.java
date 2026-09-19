@@ -72,7 +72,9 @@ public class ObligationController {
             LocalDate tradeDate,
             LocalDate settleDate,
             ObligationStatus status,
-            String nettingRunId) {
+            String nettingRunId,
+            java.time.Instant createdAt,
+            String cancelReason) {
         static ObligationResponse from(TradeObligation o) {
             return new ObligationResponse(
                     o.getObligationId(),
@@ -83,7 +85,9 @@ public class ObligationController {
                     o.getTradeDate(),
                     o.getSettleDate(),
                     o.getStatus(),
-                    o.getNettingRunId());
+                    o.getNettingRunId(),
+                    o.getCreatedAt(),
+                    o.getCancelReason());
         }
     }
 }

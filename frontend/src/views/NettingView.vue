@@ -11,9 +11,22 @@
           <el-option label="CNY" value="CNY" />
           <el-option label="EUR" value="EUR" />
         </el-select>
-        <el-button type="primary" :disabled="!auth.isOperator" :loading="running" @click="execute">执行轧差</el-button>
+        <el-button type="primary" :disabled="!auth.isOperator || pendingDups.length > 0" :loading="running" @click="execute">执行轧差</el-button>
         <el-button @click="loadRuns">刷新批次</el-button>
       </div>
+      <el-alert
+        v-if="pendingDups.length"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="`该交割日/币种存在 ${pendingDups.length} 组未处理的疑似重复 OPEN 义务，轧差已被阻止`"
+      >
+        <template #default>
+          请先前往
+          <router-link to="/duplicates" class="dup-link">重复检测</router-link>
+          页取消重复义务或标记已复核，处理完毕后即可执行。
+        </template>
+      </el-alert>
     </div>
 
     <div v-if="result" class="card-panel" style="margin-top:16px">
@@ -57,7 +70,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '../api/client'
 import { useAuthStore } from '../stores/auth'
@@ -70,6 +83,7 @@ const loading = ref(false)
 const result = ref(null)
 const runs = ref([])
 const memberMap = ref({})
+const pendingDups = ref([])
 
 function nameOf(id) {
   return memberMap.value[id] || ''
@@ -86,6 +100,21 @@ async function loadRuns() {
   }
 }
 
+async function checkDuplicates() {
+  if (!settleDate.value || !currency.value) {
+    pendingDups.value = []
+    return
+  }
+  try {
+    const { data } = await api.get('/duplicates', {
+      params: { settleDate: settleDate.value, currency: currency.value }
+    })
+    pendingDups.value = data.filter((g) => g.pending)
+  } catch {
+    pendingDups.value = []
+  }
+}
+
 async function execute() {
   running.value = true
   try {
@@ -96,13 +125,28 @@ async function execute() {
     result.value = data
     ElMessage.success('轧差完成，守恒校验通过')
     await loadRuns()
+    await checkDuplicates()
   } catch (e) {
     result.value = null
     await loadRuns()
+    await checkDuplicates()
   } finally {
     running.value = false
   }
 }
 
-onMounted(loadRuns)
+watch([settleDate, currency], checkDuplicates)
+
+onMounted(() => {
+  loadRuns()
+  checkDuplicates()
+})
 </script>
+
+<style scoped>
+.dup-link {
+  color: #c45656;
+  font-weight: 600;
+  text-decoration: underline;
+}
+</style>

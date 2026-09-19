@@ -1,10 +1,12 @@
 package com.clearing.netting.adapter.out.persistence;
 
+import com.clearing.netting.adapter.out.persistence.entity.DuplicateResolutionJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.MemberJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.NetPositionJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.NettingRunJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.ObligationJpaEntity;
 import com.clearing.netting.adapter.out.persistence.entity.UserJpaEntity;
+import com.clearing.netting.domain.model.DuplicateGroupResolution;
 import com.clearing.netting.domain.model.Member;
 import com.clearing.netting.domain.model.NetPosition;
 import com.clearing.netting.domain.model.NettingRun;
@@ -38,7 +40,9 @@ final class PersistenceMapper {
                 e.getTradeDate(),
                 e.getSettleDate(),
                 e.getStatus(),
-                e.getNettingRunId());
+                e.getNettingRunId(),
+                e.getCreatedAt(),
+                e.getCancelReason());
     }
 
     static ObligationJpaEntity toEntity(TradeObligation o) {
@@ -52,6 +56,29 @@ final class PersistenceMapper {
         e.setSettleDate(o.getSettleDate());
         e.setStatus(o.getStatus());
         e.setNettingRunId(o.getNettingRunId());
+        e.setCreatedAt(o.getCreatedAt());
+        e.setCancelReason(o.getCancelReason());
+        return e;
+    }
+
+    static DuplicateGroupResolution toDomain(DuplicateResolutionJpaEntity e) {
+        return new DuplicateGroupResolution(
+                e.getGroupKey(),
+                e.getOpenCount(),
+                e.getResolutionType(),
+                e.getReason(),
+                e.getResolvedBy(),
+                e.getResolvedAt());
+    }
+
+    static DuplicateResolutionJpaEntity toEntity(DuplicateGroupResolution r) {
+        DuplicateResolutionJpaEntity e = new DuplicateResolutionJpaEntity();
+        e.setGroupKey(r.getGroupKey());
+        e.setOpenCount(r.getOpenCount());
+        e.setResolutionType(r.getResolutionType());
+        e.setReason(r.getReason());
+        e.setResolvedBy(r.getResolvedBy());
+        e.setResolvedAt(r.getResolvedAt());
         return e;
     }
 

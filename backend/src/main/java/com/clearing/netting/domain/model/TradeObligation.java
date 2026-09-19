@@ -2,6 +2,7 @@ package com.clearing.netting.domain.model;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
@@ -16,6 +17,8 @@ public class TradeObligation {
     private final LocalDate settleDate;
     private ObligationStatus status;
     private String nettingRunId;
+    private final Instant createdAt;
+    private String cancelReason;
 
     public TradeObligation(
             String obligationId,
@@ -26,7 +29,9 @@ public class TradeObligation {
             LocalDate tradeDate,
             LocalDate settleDate,
             ObligationStatus status,
-            String nettingRunId) {
+            String nettingRunId,
+            Instant createdAt,
+            String cancelReason) {
         this.obligationId = Objects.requireNonNull(obligationId);
         this.payerMemberId = Objects.requireNonNull(payerMemberId);
         this.payeeMemberId = Objects.requireNonNull(payeeMemberId);
@@ -36,6 +41,8 @@ public class TradeObligation {
         this.settleDate = Objects.requireNonNull(settleDate);
         this.status = Objects.requireNonNull(status);
         this.nettingRunId = nettingRunId;
+        this.createdAt = createdAt;
+        this.cancelReason = cancelReason;
     }
 
     public static TradeObligation open(
@@ -60,6 +67,8 @@ public class TradeObligation {
                 tradeDate,
                 settleDate,
                 ObligationStatus.OPEN,
+                null,
+                Instant.now(),
                 null);
     }
 
@@ -76,6 +85,14 @@ public class TradeObligation {
             throw new IllegalStateException("only NETTED obligations can be settled");
         }
         this.status = ObligationStatus.SETTLED;
+    }
+
+    public void markCancelled(String reason) {
+        if (status != ObligationStatus.OPEN) {
+            throw new IllegalStateException("only OPEN obligations can be cancelled");
+        }
+        this.status = ObligationStatus.CANCELLED;
+        this.cancelReason = reason;
     }
 
     public String getObligationId() {
@@ -112,5 +129,13 @@ public class TradeObligation {
 
     public String getNettingRunId() {
         return nettingRunId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
     }
 }
